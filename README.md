@@ -10,6 +10,18 @@
   <a href="https://arxiv.org/abs/2405.15793"><strong>Paper</strong></a>
 </p>
 
+## Run on SWE-Bench-Live
+
+```shell
+sweagent run-batch \
+    --config config/default.yaml \
+    --agent.model.name gpt-4.1-20250414 \
+    --num_workers 3 \
+    --agent.model.per_instance_cost_limit 1.00 \
+    --instances.type swe_bench \
+    --instances.subset test.jsonl
+```
+
 
 SWE-agent lets your language model of choice (e.g. GPT-4o or Claude Sonnet 3.7) autonomously use tools to:
 

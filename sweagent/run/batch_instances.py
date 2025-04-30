@@ -154,12 +154,12 @@ class SimpleBatchInstance(BaseModel):
     @classmethod
     def from_swe_bench(cls, instance: dict[str, Any]) -> Self:
         """Convert instances from the classical SWE-bench dataset to the `SimpleBatchInstance` format."""
-        iid = instance["instance_id"]
+        iid = instance["instance_id"].lower()
         image_name = instance.get("image_name", None)
         if image_name is None:
             # Docker doesn't allow double underscore, so we replace them with a magic token
             id_docker_compatible = iid.replace("__", "_1776_")
-            image_name = f"swebench/sweb.eval.x86_64.{id_docker_compatible}:latest"
+            image_name = f"starryzhang/sweb.eval.x86_64.{id_docker_compatible}:latest"
         return cls(
             image_name=image_name,
             problem_statement=instance["problem_statement"],
@@ -247,7 +247,7 @@ class InstancesFromHuggingFace(BaseModel, AbstractInstanceSource):
 class SWEBenchInstances(BaseModel, AbstractInstanceSource):
     """Load instances from SWE-bench."""
 
-    subset: Literal["lite", "verified", "full"] = "lite"
+    subset: str
 
     split: Literal["dev", "test"] = "dev"
 
@@ -274,19 +274,12 @@ class SWEBenchInstances(BaseModel, AbstractInstanceSource):
     """Run sb-cli to evaluate"""
 
     def _get_huggingface_name(self) -> str:
-        if self.subset == "full":
-            return "princeton-nlp/SWE-Bench"
-        elif self.subset == "verified":
-            return "princeton-nlp/SWE-Bench_Verified"
-        elif self.subset == "lite":
-            return "princeton-nlp/SWE-Bench_Lite"
-        msg = f"Unsupported subset: {self.subset}"
-        raise ValueError(msg)
+        return self.subset
 
     def get_instance_configs(self) -> list[BatchInstance]:
         from datasets import load_dataset
 
-        ds: list[dict[str, Any]] = load_dataset(self._get_huggingface_name(), split=self.split)  # type: ignore
+        ds: list[dict[str, Any]] = load_dataset("json", data_files=self._get_huggingface_name(), split="train")  # type: ignore
 
         if isinstance(self.deployment, DockerDeploymentConfig):
             self.deployment.platform = "linux/amd64"
